@@ -95,7 +95,7 @@ function viewProducts() {
 
 function viewLowInventory() {
     clear();
-    connection.query("SELECT * FROM products WHERE stock_quantity <= 5", function (err, res) {
+    connection.query("SELECT * FROM products WHERE stock_quantity < 5", function (err, res) {
         if (err) throw err;
         console.log(chalk.green.bold("-------------------"));
         console.log(chalk.green.bold("LOW INVENTORY ITEMS"));

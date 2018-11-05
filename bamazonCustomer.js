@@ -38,7 +38,7 @@ connection.connect(function (err, res) {
 function start() {
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
-        clear();
+        // clear();
         console.log("\n");
         console.table(res);
         promptCustomer();
@@ -98,7 +98,7 @@ function updateQuantity(quantity, item_id) {
         ],
         function (error) {
             if (error) throw err;
-            console.log("\n Updated quantity");
+            // console.log("\n Updated quantity");
             setTimeout(start, 2000);
             // start();
         }
