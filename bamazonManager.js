@@ -19,14 +19,14 @@
 
 // If a manager selects Add New Product, it should allow the manager to add a completely new product to the store.
 
-var mysql = require("mysql");
-var inquirer = require("inquirer");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
 const chalk = require('chalk');
 const cTable = require('console.table');
-var clear = require('clear');
+const clear = require('clear');
 
 //create the connection information for the sql database
-var connection = mysql.createConnection({
+const connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
@@ -38,10 +38,13 @@ connection.connect(function (err, res) {
     if (err) throw err;
     console.log(`connected as id ${connection.threadId}`);
     // console.log(res);
+    clear();
     promptManager();
 });
 
 function promptManager() {
+    console.log("\n");
+    // clear();
     inquirer
         .prompt([{
             name: "items",
@@ -70,95 +73,119 @@ function promptManager() {
 
 function displayProducts() {
     connection.query("SELECT * FROM products", function (err, res) {
+        // clear();
         if (err) throw err;
-        
         console.log("\n");
         console.table(res);
-    })
+    });
 };
 
 function viewProducts() {
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
         clear();
-        console.log("\n");
+        // console.log("\n");
+        console.log(chalk.bold.green("--------------"));
+        console.log(chalk.bold.green("ITEMS FOR SALE"));
+        console.log(chalk.bold.green("--------------"));
         console.table(res);
         promptManager();
-    })
+    });
 };
 
 function viewLowInventory() {
     clear();
     connection.query("SELECT * FROM products WHERE stock_quantity <= 5", function (err, res) {
         if (err) throw err;
-        console.log("LOW INVENTORY ITEMS");
+        console.log(chalk.green.bold("-------------------"));
+        console.log(chalk.green.bold("LOW INVENTORY ITEMS"));
+        console.log(chalk.green.bold("-------------------"));
         console.log("\n");
         console.table(res);
         promptManager();
-    })
+    });
 };
 
 function addInventory() {
-    // query the db for all items being sold
-    connection.query("SELECT * from products", function(err,results){
+    clear();
+    console.log(chalk.green("-----------------------------------"));
+    console.log(chalk.green("ADD INVENTORY TO ITEMS THAT ARE LOW"));
+    console.log(chalk.green("-----------------------------------"));
+    connection.query("SELECT * FROM products", function (err, res) {
+        // clear();
         if (err) throw err;
-    })
-    console.log("ADD INVENTORY TO ITEMS THAT ARE LOW");
-    console.log("-----------------------------------");
-    displayProducts();
-    inquirer
-        .prompt([{
-                name: "item_id",
-                type: "input",
-                message: "What is the product id of the item to add inventory?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
+        console.log("\n");
+        console.table(res);
+        inquirer
+            .prompt([{
+                    name: "item_id",
+                    type: "input",
+                    message: "What is the product id of the item to add inventory?",
+                    validate: function (value) {
+                        if (isNaN(value) === false) {
+                            return true;
+                        }
+                        return false;
+                    },
                 },
+                {
+                    name: "stock_quantity",
+                    type: "input",
+                    message: "What quantity would you like to add to this item?",
+                    validate: function (value) {
+                        if (isNaN(value) === false) {
+                            return true;
+                        }
+                        return false;
+                    },
+                }
+            ])
+
+            .then(function (answer) {
+                connection.query("SELECT * FROM products WHERE ?", {
+                    item_id: answer.item_id
+                }, function (err, res) {
+                    if (err) throw err;
+                    // console.log(res);
+
+                    // console.log(answer);
+                    var quantity = parseInt(res[0].stock_quantity);
+                    // console.log(answer.stock_quantity);
+
+                    var new_quantity = parseInt(answer.stock_quantity) + quantity;
+                    // console.log(chalk.red(new_quantity));
+                    // when finished prompting, insert a new item into the db with that info
+                    updateInventory(new_quantity, answer.item_id);
+                });
+
+            });
+    });
+};
+
+function updateInventory(new_quantity, item_id) {
+    connection.query(
+        "UPDATE products SET ? WHERE ?", [{
+                stock_quantity: new_quantity
             },
             {
-                name: "stock_quantity",
-                type: "input",
-                message: "What quantity would you like to add to this item?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                },
+                item_id: item_id
             }
-        ])
-
-        .then(function (answer) {
-            
-            var quantity = res[0].stock_quantity;
-            var new_quantity = answer.stock_quantity + quantity
-            // when finished prompting, insert a new item into the db with that info
-            var query = connection.query(
-                "UPDATE products SET ? WHERE ?", [{
-                        stock_quantity: new_quantity
-                    },
-                    {
-                        item_id: answer.item_id
-                    }
-                ],
-                function (error) {
-                    if (error) throw err;
-                }
-                );
-                console.log(query);
-                console.log("Item Quantity Updated Succesfully!");
-                displayProducts();
-        })
+        ],
+        function (error) {
+            if (error) throw err;
+            // console.log(query);
+            clear();
+            connection.query("SELECT * FROM products", function (err, res) {
+                // clear();
+                if (err) throw err;
+                console.log("\n");
+                console.table(res);
+                console.log(chalk.green("Item Quantity Updated Succesfully!"));
+                promptManager();
+            });
+        }
+    );
 }
-
-
-
-
-
-
 
 function addNewProduct() {
     clear();

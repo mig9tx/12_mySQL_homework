@@ -12,11 +12,10 @@
 //once order goes through, display the total cost to the customer. 
 
 
-var mysql = require("mysql");
-var inquirer = require("inquirer");
-
+const mysql = require("mysql");
+const inquirer = require("inquirer");
 const chalk = require('chalk');
-
+const clear = require('clear');
 const cTable = require('console.table');
 
 //create the connection information for the sql database
@@ -39,6 +38,7 @@ connection.connect(function (err, res) {
 function start() {
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
+        clear();
         console.log("\n");
         console.table(res);
         promptCustomer();
